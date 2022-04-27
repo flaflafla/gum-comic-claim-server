@@ -3,18 +3,28 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const pgp = require("pg-promise")();
 
-const { DEV_DATABASE_URL, PORT, RPC_URL } = process.env;
+const { DATABASE_URL, DEV_DATABASE_URL, PORT, RPC_URL } = process.env;
 
 const app = express();
 const port = PORT || 5000;
 
 const corsOptions = {
-  origin: ["http://localhost:3000"],
+  origin: [
+    "http://localhost:3000",
+    "https://gum-comic-claim-client.herokuapp.com/",
+  ],
 };
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
-const db = pgp(DEV_DATABASE_URL);
+const prodDbOptions = {
+  connectionString: DATABASE_URL,
+  max: 20,
+  ssl: {
+    rejectUnauthorized: false,
+  },
+};
+const db = pgp(DEV_DATABASE_URL || prodDbOptions);
 
 app.get("/", (req, res) => {
   res.send("sup sup");
