@@ -11,7 +11,7 @@ const port = PORT || 5000;
 const corsOptions = {
   origin: [
     "http://localhost:3000",
-    "https://gum-comic-claim-client.herokuapp.com/",
+    "https://gum-comic-claim-client.herokuapp.com",
   ],
 };
 app.use(cors(corsOptions));
