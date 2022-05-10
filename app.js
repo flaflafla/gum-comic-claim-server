@@ -45,13 +45,19 @@ app.get("/accounts/:account/balances", async (req, res) => {
     params: { account },
   } = req;
   await db
-    .any("select kid_count from kid_holders where account = $<account>", {
-      account,
-    })
-    .then((_kidData = []) => {
-      db.any("select pup_count from pup_holders where account = $<account>", {
+    .any(
+      "select kid_count from kid_holders where lower(account) = lower($<account>)",
+      {
         account,
-      })
+      }
+    )
+    .then((_kidData = []) => {
+      db.any(
+        "select pup_count from pup_holders where lower(account) = lower($<account>)",
+        {
+          account,
+        }
+      )
         .then((_pupData = []) => {
           const [kidData = {}] = _kidData;
           const { kid_count: kidCount } = kidData;
@@ -75,7 +81,7 @@ app.get("/orders/:account", async (req, res) => {
     params: { account },
   } = req;
   await db
-    .any("select * from orders where account = $<account>", {
+    .any("select * from orders where lower(account) = lower($<account>)", {
       account,
     })
     .then((_orderData = []) => {
@@ -105,21 +111,27 @@ app.post("/orders", async (req, res) => {
     body: { account, deliveryAddress, count, notes },
   } = req;
   await db
-    .any("select sum(count) from orders where account = $<account>", {
-      account,
-    })
+    .any(
+      "select sum(count) from orders where lower(account) = lower($<account>)",
+      {
+        account,
+      }
+    )
     .then(async (_existingOrderData = []) => {
       const [_sum = {}] = _existingOrderData;
       const { sum } = _sum;
       const existingOrderCount = parseInt(sum) || 0;
       await db
-        .any("select kid_count from kid_holders where account = $<account>", {
-          account,
-        })
+        .any(
+          "select kid_count from kid_holders where lower(account) = lower($<account>)",
+          {
+            account,
+          }
+        )
         .then(async (_kidData = []) => {
           await db
             .any(
-              "select pup_count from pup_holders where account = $<account>",
+              "select pup_count from pup_holders where lower(account) = lower($<account>)",
               {
                 account,
               }
