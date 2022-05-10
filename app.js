@@ -2,8 +2,18 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const pgp = require("pg-promise")();
+const nodemailer = require("nodemailer");
 
-const { DATABASE_URL, DEV_DATABASE_URL, PORT, RPC_URL } = process.env;
+const {
+  DATABASE_URL,
+  EMAIL_HOST,
+  EMAIL_PASSWORD,
+  EMAIL_USERNAME,
+  DEV_DATABASE_URL,
+  PORT,
+  RECIPIENT_EMAIL,
+  RPC_URL,
+} = process.env;
 
 const app = express();
 const port = PORT || 5000;
@@ -120,7 +130,6 @@ app.post("/orders", async (req, res) => {
               const [pupData = {}] = _pupData;
               const { pup_count: pupCount = 0 } = pupData;
               const eligibleCount = Math.min(kidCount, pupCount);
-              console.log({ eligibleCount, existingOrderCount, count });
               if (count + existingOrderCount > eligibleCount) {
                 res.status(401);
                 res.send({
@@ -139,8 +148,32 @@ app.post("/orders", async (req, res) => {
                     notes,
                   }
                 )
-                .then((data) => {
+                .then(async (data) => {
                   res.send({ data });
+                  try {
+                    const transporter = nodemailer.createTransport({
+                      host: EMAIL_HOST,
+                      port: 587,
+                      secure: true,
+                      name: EMAIL_HOST,
+                      auth: {
+                        user: EMAIL_USERNAME,
+                        pass: EMAIL_PASSWORD,
+                      },
+                      sendmail: true,
+                      tls: {
+                        rejectUnauthorized: false,
+                      },
+                    });
+                    const emailRes = await transporter.sendMail({
+                      from: `"BGK Comic Orders" <${EMAIL_USERNAME}>`,
+                      to: RECIPIENT_EMAIL,
+                      subject: "New BGK Comic Order",
+                      text: `ACCOUNT:\n${account}\n\nDELIVERY ADDRESS:\n${deliveryAddress}\n\nCOUNT:\n${count}\n\nNOTES:\n${notes}`,
+                    });
+                  } catch (emailErr) {
+                    console.error({ emailErr });
+                  }
                 })
                 .catch((createOrderError) => {
                   res.status(500);
