@@ -3,8 +3,11 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const pgp = require("pg-promise")();
 const nodemailer = require("nodemailer");
+const AWS = require("aws-sdk");
 
 const {
+  AWS_ACCESS_KEY_ID,
+  AWS_SECRET_ACCESS_KEY,
   DATABASE_URL,
   EMAIL_HOST,
   EMAIL_PASSWORD,
@@ -35,6 +38,12 @@ const prodDbOptions = {
   },
 };
 const db = pgp(DEV_DATABASE_URL || prodDbOptions);
+
+AWS.config.update({
+  accessKeyId: AWS_ACCESS_KEY_ID,
+  secretAccessKey: AWS_SECRET_ACCESS_KEY,
+});
+const s3 = new AWS.S3();
 
 app.get("/", (req, res) => {
   res.send("sup sup");
@@ -73,6 +82,28 @@ app.get("/accounts/:account/balances", async (req, res) => {
     .catch((kidError) => {
       res.status(500);
       res.send({ kidError });
+    });
+});
+
+app.get("/images/:collection/:id", async (req, res) => {
+  const {
+    params: { collection, id },
+  } = req;
+  await s3
+    .getObject({
+      Bucket: "bgk-images",
+      Key: `${collection}/${id}.png`,
+    })
+    .promise()
+    .then((_imageData = {}) => {
+      const html = `<html><body></body><img src='data:image/jpeg;base64,${Buffer.from(
+        _imageData.Body
+      )?.toString("base64")}'/></body></html>`;
+      res.send(html);
+    })
+    .catch((imageError) => {
+      res.status(500);
+      res.send({ imageError });
     });
 });
 
