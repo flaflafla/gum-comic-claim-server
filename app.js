@@ -96,9 +96,15 @@ app.get("/images/:collection/:id", async (req, res) => {
     })
     .promise()
     .then((_imageData = {}) => {
-      const html = `<html><body></body><img src='data:image/jpeg;base64,${Buffer.from(
-        _imageData.Body
-      )?.toString("base64")}'/></body></html>`;
+      const html = `
+        <html>
+          <body>
+            <img src='data:image/jpeg;base64,${Buffer.from(
+              _imageData.Body
+            )?.toString("base64")}'/>
+          </body>
+        </html>
+      `;
       res.send(html);
     })
     .catch((imageError) => {
