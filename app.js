@@ -99,7 +99,7 @@ app.get("/images/:collection/:id", async (req, res) => {
       const html = `data:image/jpeg;base64,${Buffer.from(
         _imageData.Body
       )?.toString("base64")}`;
-      res.send({ data: html });
+      res.send({ data: { src: html, collection, id } });
     })
     .catch((imageError) => {
       res.status(500);
